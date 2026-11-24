@@ -34,11 +34,35 @@ npm run build
 `dist/index.html` tek başına çalışan bir dosyadır: çift tıklayıp tarayıcıda açabilir ya da herhangi
 bir statik hostinge (GitHub Pages, Netlify, Cloudflare Pages) yükleyebilirsiniz.
 
-GitHub Pages için hazır iş akışı `.github/workflows/deploy.yml` içinde. Repo ayarlarında
-**Settings → Pages → Source: GitHub Actions** seçtikten sonra `main` dalına her gönderimde yayınlanır.
+GitHub Pages için hazır iş akışı `.github/workflows/deploy.yml` içinde; ayrıntılar aşağıda, "Telefona yükleme" bölümünde.
 
 > Veriler tarayıcıya ve adrese özeldir. `localhost` ile GitHub Pages adresindeki veriler ayrı tutulur;
 > taşımak için **Ayarlar → Yedeği indir / Yedekten geri yükle** kullanın.
+
+## Telefona yükleme
+
+Uygulama bir web uygulamasıdır (PWA): bir adreste yayınlanır, telefonda o adres açılıp ana ekrana eklenir.
+Ana ekrandan açıldığında tarayıcı çubukları olmadan tam ekran çalışır, internet yokken de açılır.
+
+**1. Yayınlayın** (bir kez):
+
+- **GitHub Pages:** Repo herkese açıksa ya da GitHub Pro kullanıyorsanız **Settings → Pages → Source: GitHub Actions**
+  seçin, ardından **Actions → Deploy to GitHub Pages → Run workflow**. Adres: `https://<kullanıcı>.github.io/<repo>/`.
+  Repoyu herkese açık yapmak yalnızca kodu açar; verileriniz ve API anahtarınız repoda değil, telefonunuzda durur.
+- **Repo özel kalsın:** [Netlify](https://app.netlify.com) veya [Cloudflare Pages](https://pages.cloudflare.com)'e
+  GitHub ile giriş yapın, bu repoyu seçin. Build komutu `npm run build`, yayın klasörü `dist`.
+
+**2. Telefona ekleyin:**
+
+- **iPhone (Safari):** Adresi açın → Paylaş düğmesi → **Ana Ekrana Ekle**.
+- **Android (Chrome):** Adresi açın → sağ üstteki ⋮ menü → **Uygulamayı yükle** (veya **Ana ekrana ekle**).
+
+Sonra **Ayarlar**'dan Finnhub anahtarınızı bir kez girin.
+
+> Veriler her cihazın kendi tarayıcısında saklanır. Bilgisayardaki kayıtları telefona taşımak için
+> bilgisayarda **Ayarlar → Yedeği indir**, telefonda **Yedekten geri yükle**. iPhone'da uygulamayı
+> Safari sekmesinden değil ana ekran simgesinden kullanın; Safari uzun süre açılmayan sitelerin verisini silebilir.
+> Ara sıra yedek almanız önerilir.
 
 ### Testler
 
