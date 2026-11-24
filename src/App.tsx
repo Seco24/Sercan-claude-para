@@ -81,8 +81,8 @@ function Shell() {
         </nav>
         <div className="sidebar__foot">
           <div>
-            <span className="muted">Net varlık</span>
-            <strong className="num">{new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(ledger.netWorth)}</strong>
+            <span className="muted">Ana para</span>
+            <strong className="num">{new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(ledger.anaPara)}</strong>
           </div>
           {state.fx.usdTry && (
             <div>

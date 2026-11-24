@@ -34,7 +34,7 @@ export function StockForm({ holding, onClose, onSell }: { holding?: StockHolding
     if (avgCost == null || !(avgCost > 0)) e.avgCost = 'Sıfırdan büyük bir fiyat girin';
     if (inputMode === 'qty' && (quantity == null || !(quantity > 0))) e.quantity = 'Sıfırdan büyük bir adet girin';
     if (inputMode === 'amount' && (amountUsd == null || !(amountUsd > 0))) e.amountUsd = 'Sıfırdan büyük bir tutar girin';
-    if (funded && (fxAtPurchase == null || !(fxAtPurchase > 0))) e.fx = 'Ana paradan düşülecek TL tutar için alış kurunu girin';
+    if (funded && (fxAtPurchase == null || !(fxAtPurchase > 0))) e.fx = 'Nakitten düşülecek TL tutar için alış kurunu girin';
     setErrors(e);
     if (Object.keys(e).length) return;
     const data = {
@@ -116,7 +116,7 @@ export function StockForm({ holding, onClose, onSell }: { holding?: StockHolding
       </div>
       {inputMode === 'amount' && qty != null && <p className="field__hint">≈ {formatNumber(qty, 6)} adet (kesirli hisse)</p>}
       <DateInput label="Alış tarihi" value={buyDate} onChange={setBuyDate} />
-      <Toggle label="Ana paradan (likiditeden) aktar" checked={funded} onChange={setFunded} hint="Açıkken maliyetin TL karşılığı kalan likiditeden düşülür." />
+      <Toggle label="Nakitten aktar" checked={funded} onChange={setFunded} hint="Para başlangıç ana paranızın içinden çıktıysa açık bırakın, maliyetin TL karşılığı nakitten düşülür. Ayrıca vardıysa kapatın. Hissenin bugünkü değeri her iki durumda da ana paraya eklenir." />
       <NumberInput
         label="Alış anındaki USD/TRY kuru"
         suffix="₺/$"
@@ -131,7 +131,7 @@ export function StockForm({ holding, onClose, onSell }: { holding?: StockHolding
         <p className="form-summary">
           Toplam maliyet <strong className="num">{usd(costUsd)}</strong>
           {fxAtPurchase ? <span className="num"> ≈ {tl(costUsd * fxAtPurchase)}</span> : null}
-          {funded && cashCost > 0 ? <span className="muted">, likiditeden {tl(cashCost)} düşülür</span> : null}
+          {funded && cashCost > 0 ? <span className="muted">, nakitten {tl(cashCost)} düşülür</span> : null}
         </p>
       )}
     </Modal>

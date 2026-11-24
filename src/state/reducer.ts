@@ -35,6 +35,7 @@ export type Action =
   | { type: 'stock/add'; holding: Without<StockHolding, 'id'> }
   | { type: 'stock/update'; holding: StockHolding }
   | { type: 'stock/delete'; id: string }
+  | { type: 'investments/setFunding'; fundedFromCash: boolean }
   | { type: 'position/close'; kind: 'ppf' | 'stock'; id: string; record: Without<ClosedPosition, 'id' | 'kind'> }
   | { type: 'position/deleteClosed'; id: string }
   | { type: 'quotes/merge'; quotes: Record<string, Quote> }
@@ -103,6 +104,20 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'stock/delete':
       return pruneQuotes({ ...state, holdings: removeById(state.holdings, action.id) });
 
+    case 'investments/setFunding': {
+      // Tüm açık yatırımların para kaynağını tek seferde ayarlar.
+      // Ana paradan sayılan hisselerde alış kuru yoksa bugünkü kur alış kuru kabul edilir.
+      const f = action.fundedFromCash;
+      return {
+        ...state,
+        ppfLots: state.ppfLots.map((l) => ({ ...l, fundedFromCash: f })),
+        holdings: state.holdings.map((h) => ({
+          ...h,
+          fundedFromCash: f,
+          fxAtPurchase: f && !h.fxAtPurchase ? state.fx.usdTry : h.fxAtPurchase,
+        })),
+      };
+    }
     case 'position/close': {
       const record: ClosedPosition = { ...action.record, id: newId(), kind: action.kind };
       const next =

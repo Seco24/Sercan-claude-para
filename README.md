@@ -103,16 +103,20 @@ Hiçbir bakiye ayrıca saklanmaz; hepsi kayıtlardan her seferinde yeniden hesap
 (`src/domain/ledger.ts`). Bu sayede bir kayıt düzenlendiğinde ya da silindiğinde tüm rakamlar tutarlı kalır.
 
 ```
-Ana para        = Başlangıç + Eklemeler − Çekimler − Tüm harcamalar + Kapanan yatırımlardan dönen net
-Kalan likidite  = Ana para − Ana paradan yatırıma aktarılan
-Yatırımlar      = PPF güncel bakiyesi + ABD hisseleri × USD/TRY
-Net varlık      = Kalan likidite + Yatırımlar
-Aylık borç      = Seçilen ayın harcamaları toplamı
+Nakit (likidite) = Başlangıç + Eklemeler − Çekimler − Tüm harcamalar + Kapanan yatırımlardan dönen
+                   − Nakitten yatırıma aktarılan
+Ana para         = Nakit + PPF'in bugünkü bakiyesi + ABD hisselerinin bugünkü TL değeri
+Aylık borç       = Seçilen ayın harcamaları toplamı
 ```
 
-- Yatırım eklerken **Ana paradan aktar** açıksa tutar likiditeden düşülür. Dışarıdan getirilen
-  para için kapatın: o zaman yalnızca net varlığa eklenir.
-- Hisse için likiditeden düşülen tutar `adet × maliyet × alış kuru` ile hesaplanır.
+Ana para anlık değişir: PPF her gün getirisi kadar artar, hisselerin fiyatı veya kur değiştikçe
+ana para da aynı anda artar ya da azalır. Özet ekranında bugünkü değişim ayrıca gösterilir.
+
+- **Yatırımlardaki para nereden geldi?** (Özet → Hesap dökümü): Yatırımlara koyduğunuz para başlangıç
+  ana paranızın içindeyse **Başlangıç ana paramın içinden** seçin, tutar nakitten düşülür. Ayrıca
+  var olan paraysa **Ayrıca vardı** seçin. Doğru seçim, "Nakit" satırının gerçek nakdinizle aynı çıkmasıdır;
+  yanlış seçim parayı iki kez sayar ya da eksik gösterir. Aynı ayar her yatırımın düzenleme ekranında da var.
+- Hisse için nakitten düşülen tutar `adet × maliyet × alış kuru` ile hesaplanır.
 - **Bozdur / Sat** pozisyonu kapatır, dönen tutarı ana paraya ekler ve gerçekleşen kâr/zararı "Kapanan yatırımlar" listesine yazar.
 
 **PPF günlük getiri** (`src/domain/ppf.ts`), aylık oran `r`, ay gün sayısı `D` (30 ya da 365/12):

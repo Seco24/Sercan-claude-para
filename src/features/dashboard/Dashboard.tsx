@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AllocationBar } from '../../components/charts';
+import { Segmented } from '../../components/fields';
 import { Icon } from '../../components/Icon';
 import { Money } from '../../components/Money';
 import { formatDate, formatDayHeading, monthLabel, monthOf } from '../../domain/dates';
@@ -13,7 +14,7 @@ import { InitialCapitalForm, MovementForm } from './CapitalForms';
 type CapitalModal = { kind: 'initial' } | { kind: 'movement'; movement?: CapitalMovement; type?: 'deposit' | 'withdraw' } | null;
 
 export function Dashboard({ onAddExpense, onEditExpense }: { onAddExpense: () => void; onEditExpense: (e: Expense) => void }) {
-  const { state, ledger: L, today } = useStore();
+  const { state, ledger: L, today, dispatch } = useStore();
   const [modal, setModal] = useState<CapitalModal>(null);
   const month = monthOf(today);
   const recent = expensesInMonth(state.expenses, month).slice(0, 6);
@@ -42,7 +43,7 @@ export function Dashboard({ onAddExpense, onEditExpense }: { onAddExpense: () =>
           <h2>Başlamak için ana paranızı girin</h2>
           <p>
             Elinizdeki toplam nakit tutarı başlangıç ana parası olarak girin. Sonra harcamalarınızı ekledikçe ana paradan otomatik düşülür;
-            yatırımlarınız ayrı izlenip net varlığınıza eklenir.
+            para piyasası fonu ve ABD hisseleriniz de bugünkü değerleriyle ana paraya eklenir.
           </p>
           <button className="btn btn--primary" onClick={() => setModal({ kind: 'initial' })}>
             Başlangıç ana parasını gir
@@ -50,11 +51,47 @@ export function Dashboard({ onAddExpense, onEditExpense }: { onAddExpense: () =>
         </section>
       )}
 
-      <section className="hero" aria-label="Ana para ve net varlık">
+      {L.liquidity < -0.004 && L.funding !== 'none' && L.funding !== 'external' && (
+        <div className="banner">
+          <Icon name="alert" size={18} />
+          <div className="banner__body">
+            <p>
+              Nakit eksiye düştü: yatırımlarınızdaki para nakitten düşülmüş. Bu para başlangıç ana paranıza dahil değilse, yani ayrıca
+              vardıysa, yatırımları öyle işaretleyin.
+            </p>
+            <button className="btn btn--sm btn--ghost" onClick={() => dispatch({ type: 'investments/setFunding', fundedFromCash: false })}>
+              Yatırımlardaki para ayrıca vardı
+            </button>
+          </div>
+        </div>
+      )}
+
+      <section className="hero" aria-label="Ana para ve nakit">
         <div className="hero__fig">
           <h2 className="hero__label">Ana para</h2>
           <p className={`hero__value num${L.anaPara < 0 ? ' is-neg' : ''}`}>{tl(L.anaPara)}</p>
-          <p className="hero__note">Başlangıç ve eklemelerden harcamalar düşülmüş bakiye</p>
+          {Math.abs(L.todayChange) > 0.004 && (
+            <p className="hero__today">
+              Bugün <span className={`num ${L.todayChange > 0 ? 'is-pos' : 'is-neg'}`}>{tl(L.todayChange, { signed: true })}</span>
+              <span className="muted">
+                {' '}
+                (PPF {tl(L.ppf.todayGain, { signed: true })}
+                {L.stocks.rows.length > 0 && state.fx.usdTry ? `, ABD ${tl(L.stocks.dayChangeUsd * state.fx.usdTry, { signed: true })}` : ''})
+              </span>
+            </p>
+          )}
+          <ul className="hero__parts" aria-label="Ana paranın dağılımı">
+            <li>
+              <span className={`swatch s1`} aria-hidden="true" /> Nakit <span className="num">{tl(L.liquidity, { decimals: 0 })}</span>
+            </li>
+            <li>
+              <span className={`swatch s2`} aria-hidden="true" /> PPF <span className="num">{tl(L.ppf.value, { decimals: 0 })}</span>
+            </li>
+            <li>
+              <span className={`swatch s3`} aria-hidden="true" /> ABD{' '}
+              <span className="num">{L.stocksExcluded ? 'kur yok' : tl(L.stocksTry, { decimals: 0 })}</span>
+            </li>
+          </ul>
           <div className="hero__actions">
             <button className="btn btn--sm btn--ghost" onClick={() => setModal({ kind: 'movement', type: 'deposit' })}>
               <Icon name="plus" size={16} /> Ekle
@@ -68,11 +105,11 @@ export function Dashboard({ onAddExpense, onEditExpense }: { onAddExpense: () =>
           </div>
         </div>
         <div className="hero__fig hero__fig--net">
-          <h2 className="hero__label">Güncel net varlık</h2>
-          <p className={`hero__value num${L.netWorth < 0 ? ' is-neg' : ''}`}>{tl(L.netWorth)}</p>
+          <h2 className="hero__label">Nakit (kalan likidite)</h2>
+          <p className={`hero__value num${L.liquidity < 0 ? ' is-neg' : ''}`}>{tl(L.liquidity)}</p>
           <p className="hero__note">
-            Kalan likidite ve yatırımların bugünkü değeri
-            {L.stocksExcluded && <span className="warn-text"> (USD/TRY kuru olmadığından ABD hisseleri hariç)</span>}
+            Yatırımda olmayan, harcanabilir para. Harcamalar buradan düşer.
+            {L.stocksExcluded && <span className="warn-text"> USD/TRY kuru olmadığından ABD hisseleri ana paraya eklenemedi.</span>}
           </p>
         </div>
       </section>
@@ -92,11 +129,13 @@ export function Dashboard({ onAddExpense, onEditExpense }: { onAddExpense: () =>
             PPF {tl(L.ppf.value, { decimals: 0 })}, ABD {L.stocks.valueTry != null ? tl(L.stocks.valueTry, { decimals: 0 }) : usd(L.stocks.valueUsd, { decimals: 0 })}
           </span>
         </a>
-        <div className="stat">
-          <span className="stat__label">Kalan likidite</span>
-          <span className={`stat__value num${L.liquidity < 0 ? ' is-neg' : ''}`}>{tl(L.liquidity)}</span>
-          <span className="stat__note">{L.liquidity < 0 ? 'Yatırıma aktarılan tutar ana parayı aşıyor' : 'Ana paranın yatırıma aktarılmamış kısmı'}</span>
-        </div>
+        <a className="stat" href={href('yatirimlar')}>
+          <span className="stat__label">Yatırım kazancı</span>
+          <span className={`stat__value num${L.investmentGain > 0.004 ? ' is-pos' : L.investmentGain < -0.004 ? ' is-neg' : ''}`}>
+            {tl(L.investmentGain, { signed: true })}
+          </span>
+          <span className="stat__note">PPF getirisi ve hisse kâr/zararı, ana paraya dahil</span>
+        </a>
       </section>
 
       <div className="grid-2">
@@ -109,26 +148,29 @@ export function Dashboard({ onAddExpense, onEditExpense }: { onAddExpense: () =>
             {L.withdrawals > 0 && <LedgerRow op="−" label="Çekimler" value={L.withdrawals} />}
             <LedgerRow op="−" label="Harcamalar (tüm zamanlar)" value={L.totalExpenses} />
             {Math.abs(L.realized) > 0.004 && <LedgerRow op={L.realized >= 0 ? '+' : '−'} label="Kapanan yatırımlardan dönen" value={Math.abs(L.realized)} />}
-            <LedgerRow total label="Ana para" value={L.anaPara} />
-            <LedgerRow
-              op="−"
-              label="Yatırıma aktarılan"
-              value={L.investedFromCash}
-              note={L.investedFromCash > 0 ? `PPF ${tl(L.ppfFunded, { decimals: 0 })}, ABD ${tl(L.stocksFunded, { decimals: 0 })}` : undefined}
-            />
-            <LedgerRow total label="Kalan likidite" value={L.liquidity} />
-            <LedgerRow op="+" label="Yatırımların güncel değeri" value={L.investments} />
-            <LedgerRow grand label="Net varlık" value={L.netWorth} />
+            {L.investedFromCash > 0.004 && (
+              <LedgerRow
+                op="−"
+                label="Nakitten yatırıma aktarılan"
+                value={L.investedFromCash}
+                note={`PPF ${tl(L.ppfFunded, { decimals: 0 })}, ABD ${tl(L.stocksFunded, { decimals: 0 })}`}
+              />
+            )}
+            <LedgerRow total label="Nakit" value={L.liquidity} />
+            <LedgerRow op="+" label="Para piyasası fonu (bugünkü bakiye)" value={L.ppf.value} />
+            <LedgerRow op="+" label="ABD borsası (bugünkü TL değeri)" value={L.stocksTry} note={L.stocksExcluded ? 'USD/TRY kuru girilmedi' : undefined} />
+            <LedgerRow grand label="Ana para" value={L.anaPara} />
           </dl>
+          {L.funding !== 'none' && <FundingControl funding={L.funding} />}
         </section>
 
         <div className="stack">
           <section className="panel">
             <h2 className="panel__title">Varlık dağılımı</h2>
-            {L.netWorth > 0 ? (
+            {L.anaPara > 0 ? (
               <AllocationBar
                 parts={[
-                  { key: 'cash', label: 'Likidite', value: L.liquidity, slot: 1 },
+                  { key: 'cash', label: 'Nakit', value: L.liquidity, slot: 1 },
                   { key: 'ppf', label: 'Para piyasası fonu', value: L.ppf.value, slot: 2 },
                   { key: 'us', label: 'ABD borsası', value: L.stocks.valueTry ?? 0, slot: 3 },
                 ]}
@@ -226,6 +268,33 @@ export function Dashboard({ onAddExpense, onEditExpense }: { onAddExpense: () =>
 
       {modal?.kind === 'initial' && <InitialCapitalForm onClose={() => setModal(null)} />}
       {modal?.kind === 'movement' && <MovementForm movement={modal.movement} initialType={modal.type} onClose={() => setModal(null)} />}
+    </div>
+  );
+}
+
+/**
+ * Yatırımlardaki paranın kaynağı: başlangıç ana parasının içinden mi çıktı (nakitten düşülür),
+ * yoksa ayrıca mı vardı (nakitten düşülmez)? Yanlış seçim parayı iki kez saydırır ya da eksik gösterir;
+ * doğru seçim, "Nakit" satırının gerçek nakitle aynı çıkmasıdır.
+ */
+function FundingControl({ funding }: { funding: 'cash' | 'external' | 'mixed' }) {
+  const { dispatch } = useStore();
+  return (
+    <div className="funding">
+      <p className="funding__q">Yatırımlardaki para nereden geldi?</p>
+      <Segmented<'cash' | 'external' | 'mixed'>
+        label="Yatırımlardaki paranın kaynağı"
+        value={funding}
+        onChange={(v) => v !== 'mixed' && dispatch({ type: 'investments/setFunding', fundedFromCash: v === 'cash' })}
+        options={[
+          { value: 'cash', label: 'Başlangıç ana paramın içinden' },
+          { value: 'external', label: 'Ayrıca vardı' },
+        ]}
+      />
+      <p className="field__hint">
+        {funding === 'mixed' ? 'Şu an yatırımlara göre farklı ayarlı. ' : ''}
+        "Nakit" satırı elinizdeki gerçek nakitle (banka ve cüzdan) aynı çıkacak şekilde seçin. Emin değilseniz ikisini de deneyip Nakit'e bakın.
+      </p>
     </div>
   );
 }

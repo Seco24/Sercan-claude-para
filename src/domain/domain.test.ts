@@ -152,19 +152,22 @@ describe('ana para defteri', () => {
     expect(L.totalExpenses).toBe(500);
   });
 
-  it('yatırım likiditeden düşer, net varlığa güncel değeriyle eklenir', () => {
+  it('yatırım nakitten düşer, ana paraya güncel değeriyle eklenir', () => {
     let s = base();
     s = reducer(s, { type: 'ppf/add', lot: { ...lot(), startDate: '2026-01-01' } });
     s = reducer(s, { type: 'stock/add', holding: { symbol: 'MSFT', quantity: 2, avgCost: 400, buyDate: today, fxAtPurchase: 50, fundedFromCash: true, note: '' } });
     s = reducer(s, { type: 'quotes/merge', quotes: { MSFT: { price: 450, prevClose: null, fetchedAt: 0, source: 'api' } } });
     s = reducer(s, { type: 'fx/set', fx: { usdTry: 50, updatedAt: 0, source: 'manual', asOf: null } });
     const L = computeLedger(s, today);
-    expect(L.anaPara).toBe(200_000);
+    expect(L.capitalBase).toBe(200_000);
     expect(L.investedFromCash).toBe(100_000 + 40_000);
     expect(L.liquidity).toBe(60_000);
     const ppfValue = 100_000 * (1 + (0.0245 * 30) / 30);
     expect(L.investments).toBeCloseTo(ppfValue + 900 * 50, 6);
-    expect(L.netWorth).toBeCloseTo(60_000 + ppfValue + 45_000, 6);
+    expect(L.anaPara).toBeCloseTo(60_000 + ppfValue + 45_000, 6);
+    // kazanç: PPF getirisi + hisse K/Z (TL bazında, alış kuru 50)
+    expect(L.investmentGain).toBeCloseTo(ppfValue - 100_000 + (900 - 800) * 50, 6);
+    expect(L.funding).toBe('cash');
   });
 
   it('dışarıdan getirilen yatırım likiditeyi etkilemez', () => {
@@ -172,7 +175,8 @@ describe('ana para defteri', () => {
     s = reducer(s, { type: 'ppf/add', lot: { ...lot(), fundedFromCash: false } });
     const L = computeLedger(s, today);
     expect(L.liquidity).toBe(200_000);
-    expect(L.netWorth).toBeCloseTo(200_000 + 102_450, 6);
+    expect(L.anaPara).toBeCloseTo(200_000 + 102_450, 6);
+    expect(L.funding).toBe('external');
   });
 
   it('bozdurulan fon gerçekleşen getiriyi ana paraya ekler', () => {
@@ -189,7 +193,28 @@ describe('ana para defteri', () => {
     expect(s.ppfLots).toHaveLength(0);
     expect(L.anaPara).toBe(202_450);
     expect(L.liquidity).toBe(202_450);
-    expect(L.netWorth).toBe(202_450);
+    expect(L.anaPara).toBe(202_450);
+  });
+
+  it('yalnızca nakit girilmiş + yatırımlar "ayrıca vardı" → ana para = nakit + bugünkü değerler', () => {
+    let s = emptyState();
+    s.capital.initial = 50_000; // yalnızca nakit
+    s = reducer(s, { type: 'fx/set', fx: { usdTry: 50, updatedAt: 0, source: 'manual', asOf: null } });
+    s = reducer(s, { type: 'ppf/add', lot: lot() }); // varsayılan: nakitten
+    s = reducer(s, { type: 'stock/add', holding: { symbol: 'AAPL', quantity: 10, avgCost: 200, buyDate: today, fxAtPurchase: null, fundedFromCash: true, note: '' } });
+    s = reducer(s, { type: 'quotes/merge', quotes: { AAPL: { price: 230, prevClose: 220, fetchedAt: 0, source: 'api' } } });
+    let L = computeLedger(s, today);
+    expect(L.liquidity).toBeLessThan(0); // yanlış kurulum: para iki kez düşülmüş
+    s = reducer(s, { type: 'investments/setFunding', fundedFromCash: false });
+    L = computeLedger(s, today);
+    expect(L.funding).toBe('external');
+    expect(L.liquidity).toBe(50_000);
+    expect(L.anaPara).toBeCloseTo(50_000 + 102_450 + 2_300 * 50, 6);
+    expect(L.todayChange).toBeCloseTo((100_000 * 0.0245) / 30 + 10 * (230 - 220) * 50, 6);
+    // geri "ana paramın içinden" → hisselerde alış kuru yoksa bugünkü kur atanır
+    s = reducer(s, { type: 'investments/setFunding', fundedFromCash: true });
+    expect(s.holdings[0].fxAtPurchase).toBe(50);
+    expect(computeLedger(s, today).liquidity).toBe(50_000 - 100_000 - 2_000 * 50);
   });
 
   it('ana para hareketleri bakiyeye yansır', () => {

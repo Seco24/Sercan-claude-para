@@ -729,6 +729,75 @@ button:disabled {
   font-size: 0.85rem;
 }
 
+.hero__today {
+  font-size: 0.9rem;
+  color: var(--ink-2);
+}
+
+.hero__today .num {
+  font-weight: 650;
+}
+
+.hero__parts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-top: 4px;
+  font-size: 0.88rem;
+  color: var(--ink-2);
+}
+
+.hero__parts li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hero__parts .num {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.hero__parts .swatch {
+  width: 10px;
+  height: 10px;
+}
+
+.funding {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.funding .segmented {
+  display: flex;
+  width: 100%;
+}
+
+.funding .segmented__item {
+  flex: 1 1 0;
+  height: auto;
+  min-height: 40px;
+  padding: 6px 10px;
+  white-space: normal;
+  line-height: 1.25;
+}
+
+.funding__q {
+  font-weight: 650;
+  font-size: 0.92rem;
+}
+
+.banner__body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
 .hero__actions {
   display: flex;
   gap: 6px;

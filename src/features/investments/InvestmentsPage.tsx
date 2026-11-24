@@ -15,7 +15,7 @@ export function InvestmentsPage({ tab, onTab }: { tab: InvestTab; onTab: (t: Inv
       <header className="page__head">
         <div>
           <h1 className="page__title">Yatırımlar</h1>
-          <p className="page__sub">Ana paradan aktarılan tutarlar kalan likiditeden düşülür, güncel değer net varlığa eklenir</p>
+          <p className="page__sub">Fonun ve hisselerin bugünkü değeri ana paraya anlık olarak eklenir</p>
         </div>
       </header>
 

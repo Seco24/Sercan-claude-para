@@ -60,7 +60,7 @@ export function PpfLotForm({ lot, onClose }: { lot?: PpfLot; onClose: () => void
     };
     if (lot) dispatch({ type: 'ppf/update', lot: { ...lot, ...data } });
     else dispatch({ type: 'ppf/add', lot: data });
-    toast(lot ? 'Fon güncellendi' : funded ? 'Fon eklendi, tutar likiditeden aktarıldı' : 'Fon eklendi', 'success');
+    toast(lot ? 'Fon güncellendi' : funded ? 'Fon eklendi, tutar nakitten aktarıldı' : 'Fon eklendi', 'success');
     onClose();
   };
 
@@ -109,7 +109,7 @@ export function PpfLotForm({ lot, onClose }: { lot?: PpfLot; onClose: () => void
       <Field label="Getiri hesaplama yöntemi">
         <Segmented label="Getiri hesaplama yöntemi" value={mode} onChange={setMode} options={modeOptions()} />
       </Field>
-      <Toggle label="Ana paradan (likiditeden) aktar" checked={funded} onChange={setFunded} hint="Açıkken tutar kalan likiditeden düşülür. Dışarıdan getirdiğiniz para ise kapatın." />
+      <Toggle label="Nakitten aktar" checked={funded} onChange={setFunded} hint="Para başlangıç ana paranızın içinden çıktıysa açık bırakın, tutar nakitten düşülür. Bu para ayrıca vardıysa kapatın. Fonun bugünkü değeri her iki durumda da ana paraya eklenir." />
       {lot && rates.length > 1 && (
         <div className="callout">
           <strong>Oran geçmişi</strong>
