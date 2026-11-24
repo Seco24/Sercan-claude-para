@@ -1,0 +1,12 @@
+{
+  "name": "Para Defteri",
+  "short_name": "Para Defteri",
+  "description": "Ana para, harcama, para piyasası fonu ve ABD hisse takibi",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eef1f0",
+  "theme_color": "#14171a",
+  "lang": "tr",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
