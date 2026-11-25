@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ConfirmButton, DateInput, Field, NumberInput, TextInput } from '../../components/fields';
 import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
+import { checkDailyLimit, type LimitBreach } from '../../domain/expenses';
 import { round2 } from '../../domain/money';
 import type { Expense } from '../../domain/types';
 import { useStore } from '../../state/store';
@@ -11,7 +12,7 @@ export interface ExpenseDraft {
   date?: string;
 }
 
-export function ExpenseForm({ draft, onClose }: { draft: ExpenseDraft; onClose: () => void }) {
+export function ExpenseForm({ draft, onClose, onLimitExceeded }: { draft: ExpenseDraft; onClose: () => void; onLimitExceeded?: (b: LimitBreach) => void }) {
   const { state, dispatch, today } = useStore();
   const toast = useToast();
   const editing = draft.expense;
@@ -30,14 +31,20 @@ export function ExpenseForm({ draft, onClose }: { draft: ExpenseDraft; onClose: 
       return;
     }
     const data = { amount: round2(amount), categoryId, description: description.trim(), date };
+    // Kayıttan sonraki durumu önceden hesaplayıp günlük limiti kontrol et
+    const next: Expense = editing ? { ...editing, ...data } : { ...data, id: '__yeni__', createdAt: Date.now() };
+    const after = editing ? state.expenses.map((e) => (e.id === editing.id ? next : e)) : [...state.expenses, next];
+    const { dailyLimit, limitExcluded } = state.settings;
+    const breach = checkDailyLimit(state.expenses, after, date, dailyLimit, limitExcluded);
     if (editing) {
-      dispatch({ type: 'expense/update', expense: { ...editing, ...data } });
-      toast('Harcama güncellendi', 'success');
+      dispatch({ type: 'expense/update', expense: next });
+      if (!breach) toast('Harcama güncellendi', 'success');
     } else {
       dispatch({ type: 'expense/add', expense: data });
-      toast('Harcama eklendi, ana paradan düşüldü', 'success');
+      if (!breach) toast('Harcama eklendi, nakitten düşüldü', 'success');
     }
     onClose();
+    if (breach) onLimitExceeded?.(breach);
   };
 
   return (

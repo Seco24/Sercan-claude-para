@@ -27,6 +27,9 @@ export const DEFAULT_SETTINGS: Settings = {
   ppfDefaultRate: 2.45,
   ppfDefaultMode: 'simple',
   ppfDaysPerMonth: 30,
+  dailyLimit: 0,
+  limitNotify: false,
+  limitExcluded: [],
 };
 
 export function emptyState(): AppState {

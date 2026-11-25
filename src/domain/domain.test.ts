@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { addDays, daysBetween, lastMonths, shiftMonth } from './dates';
 import { emptyState } from './defaults';
-import { categoryBreakdown, expensesInMonth, totalOf } from './expenses';
+import { categoryBreakdown, checkDailyLimit, dailyCountedTotal, expensesInMonth, totalOf } from './expenses';
 import { computeLedger } from './ledger';
 import { parseDecimal } from './money';
 import { dailyRate, lotDetail, ppfValueAt, withRateChange } from './ppf';
 import { summarizeStocks, valueHolding } from './stocks';
-import type { AppState, PpfLot, StockHolding } from './types';
+import type { AppState, Expense, PpfLot, StockHolding } from './types';
 import { reducer } from '../state/reducer';
 
 const lot = (over: Partial<PpfLot> = {}): PpfLot => ({
@@ -222,6 +222,34 @@ describe('ana para defteri', () => {
     s = reducer(s, { type: 'capital/addMovement', movement: { type: 'deposit', amount: 30_000, date: today, note: 'Maaş' } });
     s = reducer(s, { type: 'capital/addMovement', movement: { type: 'withdraw', amount: 5_000, date: today, note: '' } });
     expect(computeLedger(s, today).anaPara).toBe(225_000);
+  });
+});
+
+describe('günlük harcama limiti', () => {
+  const e = (id: string, amount: number, categoryId = 'market', date = '2026-11-25'): Expense => ({ id, amount, categoryId, description: '', date, createdAt: 0 });
+  const base = [e('a', 400), e('b', 300, 'kira'), e('c', 900, 'market', '2026-11-24')];
+
+  it('günün toplamı limiti geçince uyarı verir', () => {
+    expect(dailyCountedTotal(base, '2026-11-25')).toBe(700);
+    const after = [...base, e('d', 350)];
+    expect(checkDailyLimit(base, after, '2026-11-25', 1000)).toEqual({ date: '2026-11-25', spent: 1050, limit: 1000, over: 50 });
+  });
+  it('limitin altında kalınca veya limit kapalıyken uyarı yok', () => {
+    const after = [...base, e('d', 250)];
+    expect(checkDailyLimit(base, after, '2026-11-25', 1000)).toBeNull(); // tam 950
+    expect(checkDailyLimit(base, [...base, e('d', 5000)], '2026-11-25', 0)).toBeNull();
+  });
+  it('hariç tutulan kategoriler sayılmaz', () => {
+    const after = [...base, e('d', 500, 'kira')];
+    expect(checkDailyLimit(base, after, '2026-11-25', 1000, ['kira'])).toBeNull();
+    expect(dailyCountedTotal(after, '2026-11-25', ['kira'])).toBe(400);
+  });
+  it('limit zaten aşıkken tutarı düşürmek uyarı üretmez, artırmak üretir', () => {
+    const over = [...base, e('d', 600)]; // 1300
+    const lowered = over.map((x) => (x.id === 'd' ? { ...x, amount: 500 } : x)); // 1200
+    expect(checkDailyLimit(over, lowered, '2026-11-25', 1000)).toBeNull();
+    const raised = over.map((x) => (x.id === 'd' ? { ...x, amount: 700 } : x));
+    expect(checkDailyLimit(over, raised, '2026-11-25', 1000)?.spent).toBe(1400);
   });
 });
 

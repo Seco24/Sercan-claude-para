@@ -7,6 +7,7 @@ import { allMonths, categoryBreakdown, categoryOf, dailyAverage, expensesInMonth
 import { tl } from '../../domain/money';
 import type { Expense, MonthKey } from '../../domain/types';
 import { useStore } from '../../state/store';
+import { DailyLimitMeter } from '../limit/DailyLimit';
 
 export function ExpensesPage({ onAdd, onEdit }: { onAdd: (date?: string) => void; onEdit: (e: Expense) => void }) {
   const { state, today } = useStore();
@@ -58,6 +59,8 @@ export function ExpensesPage({ onAdd, onEdit }: { onAdd: (date?: string) => void
           </button>
         )}
       </div>
+
+      {month === currentMonth && <DailyLimitMeter />}
 
       <section className="stats stats--month" aria-label="Aylık özet">
         <div className="stat stat--lead">

@@ -12,6 +12,9 @@ Sunucu, hesap veya veritabanı kurulumu gerekmez.
   Basit (her gün eşit tutar) ya da günlük bileşik hesap seçilebilir. Oran değiştiğinde o güne kadarki getiri korunur.
 - **ABD borsası:** Hisse ekleme (adet ve maliyet ya da tutar ve alış fiyatı), canlı fiyat, günlük değişim,
   kâr/zarar, USD ve TL karşılığı. API çalışmazsa son bilinen fiyat gösterilir, istenirse fiyat elle girilir.
+- **Günlük harcama limiti:** Ayarlar'dan bir tutar girin; bir günün harcamaları bunu geçince uyarı penceresi
+  çıkar, isterseniz telefona bildirim de gelir. Kira gibi kategoriler limit dışında tutulabilir.
+  Özet ekranında "Bugünkü harcama / limit" çubuğu görünür.
 - Aydınlık/karanlık tema (sistemi izler), mobil uyumlu, ana ekrana eklenebilir. JSON yedek indirme ve geri yükleme.
 
 ## Çalıştırma

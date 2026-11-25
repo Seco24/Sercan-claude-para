@@ -5,7 +5,7 @@
  * - Fiyat ve kur API istekleri asla önbelleğe alınmaz (her zaman canlı).
  * Verileriniz bu dosyada değil, tarayıcının yerel deposunda (localStorage) durur.
  */
-const CACHE = 'para-defteri-v2';
+const CACHE = 'para-defteri-v3';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', (event) => {
@@ -23,6 +23,17 @@ self.addEventListener('activate', (event) => {
       .keys()
       .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
+  );
+});
+
+// Bildirime dokunulunca uygulamayı öne getir (açık değilse Harcamalar ekranıyla aç)
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      for (const client of list) if ('focus' in client) return client.focus();
+      return self.clients.openWindow('./#/harcamalar');
+    }),
   );
 });
 

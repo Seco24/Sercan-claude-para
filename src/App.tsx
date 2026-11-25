@@ -6,7 +6,10 @@ import { Dashboard } from './features/dashboard/Dashboard';
 import { ExpenseForm, type ExpenseDraft } from './features/expenses/ExpenseForm';
 import { ExpensesPage } from './features/expenses/ExpensesPage';
 import { InvestmentsPage, type InvestTab } from './features/investments/InvestmentsPage';
+import { LimitAlert, limitMessage } from './features/limit/DailyLimit';
 import { SettingsPage } from './features/settings/SettingsPage';
+import type { LimitBreach } from './domain/expenses';
+import { sendNotification } from './services/notify';
 import { href, useHashRoute, type Route } from './hooks/useHashRoute';
 import { MarketProvider } from './state/market';
 import { StoreProvider, useStore } from './state/store';
@@ -49,9 +52,18 @@ function useApplyTheme() {
 
 function Shell() {
   const { route, sub } = useHashRoute();
-  const { state, ledger } = useStore();
+  const { state, ledger, today } = useStore();
   const [expenseDraft, setExpenseDraft] = useState<ExpenseDraft | null>(null);
+  const [breach, setBreach] = useState<LimitBreach | null>(null);
   useApplyTheme();
+
+  const onLimitExceeded = (b: LimitBreach) => {
+    setBreach(b);
+    if (state.settings.limitNotify) {
+      const msg = limitMessage(b, today);
+      void sendNotification(msg.title, msg.body, 'gunluk-limit');
+    }
+  };
 
   const addExpense = (date?: string) => setExpenseDraft({ date });
   const editExpense = (expense: ExpenseDraft['expense']) => setExpenseDraft({ expense });
@@ -115,7 +127,8 @@ function Shell() {
         ))}
       </nav>
 
-      {expenseDraft && <ExpenseForm draft={expenseDraft} onClose={() => setExpenseDraft(null)} />}
+      {expenseDraft && <ExpenseForm draft={expenseDraft} onClose={() => setExpenseDraft(null)} onLimitExceeded={onLimitExceeded} />}
+      {breach && <LimitAlert breach={breach} onClose={() => setBreach(null)} />}
     </div>
   );
 }

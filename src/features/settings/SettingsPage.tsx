@@ -4,7 +4,8 @@ import { Icon } from '../../components/Icon';
 import { useToast } from '../../components/Toast';
 import { emptyState } from '../../domain/defaults';
 import { formatAgo } from '../../domain/dates';
-import { formatRate } from '../../domain/money';
+import { formatRate, round2, tl } from '../../domain/money';
+import { notifyStatus, requestNotifyPermission, sendNotification, type NotifyStatus } from '../../services/notify';
 import type { AccrualMode, ApiProviderId, Category, QuoteProviderId, ThemePref } from '../../domain/types';
 import { PROVIDERS } from '../../services/quotes';
 import { STORAGE_KEY, exportJson, importJson } from '../../services/storage';
@@ -42,6 +43,7 @@ export function SettingsPage() {
         </Field>
       </section>
 
+      <LimitSettings />
       <QuoteSettings />
       <FxSettings />
 
@@ -75,6 +77,84 @@ export function SettingsPage() {
       <CategorySettings />
       <DataSettings />
     </div>
+  );
+}
+
+function LimitSettings() {
+  const { state, dispatch } = useStore();
+  const toast = useToast();
+  const { dailyLimit, limitNotify, limitExcluded } = state.settings;
+  const [perm, setPerm] = useState<NotifyStatus>(notifyStatus);
+  const set = (patch: Partial<typeof state.settings>) => dispatch({ type: 'settings/update', patch });
+  const notifyOn = limitNotify && perm === 'granted';
+
+  const permHint =
+    perm === 'unsupported'
+      ? "Bu tarayıcı bildirim desteklemiyor. iPhone'da önce uygulamayı ana ekrana ekleyip oradan açın."
+      : perm === 'denied'
+        ? 'Bildirim izni reddedilmiş. Telefon ayarlarında bu uygulama (veya Chrome) için bildirimlere izin verip tekrar deneyin.'
+        : 'Limit aşıldığında uyarı telefonunuzun bildirim çubuğuna da düşer.';
+
+  return (
+    <section className="panel settings">
+      <h2 className="panel__title">Günlük harcama limiti</h2>
+      <NumberInput
+        label="Günlük limit"
+        currency="TRY"
+        value={dailyLimit > 0 ? dailyLimit : null}
+        onChange={(v) => set({ dailyLimit: v != null && v > 0 ? round2(v) : 0 })}
+        placeholder="Kapalı"
+        hint="Bir günün harcamaları bu tutarı geçince uyarı çıkar. Boş bırakırsanız uyarı kapanır."
+      />
+      <Field label="Limite sayılmayan kategoriler" hint="Kira veya fatura gibi büyük sabit ödemeleri hariç tutabilirsiniz.">
+        <div className="chips">
+          {state.categories.map((c) => {
+            const on = limitExcluded.includes(c.id);
+            return (
+              <button
+                key={c.id}
+                type="button"
+                className="chip"
+                aria-pressed={on}
+                onClick={() => set({ limitExcluded: on ? limitExcluded.filter((id) => id !== c.id) : [...limitExcluded, c.id] })}
+              >
+                <span aria-hidden="true">{c.emoji}</span> {c.name}
+              </button>
+            );
+          })}
+        </div>
+      </Field>
+      <Toggle
+        label="Telefona bildirim de gönder"
+        checked={notifyOn}
+        hint={permHint}
+        onChange={async (on) => {
+          if (!on) return set({ limitNotify: false });
+          const p = await requestNotifyPermission();
+          setPerm(p);
+          if (p === 'granted') {
+            set({ limitNotify: true });
+            toast('Bildirimler açıldı', 'success');
+          } else {
+            set({ limitNotify: false });
+            toast(p === 'unsupported' ? 'Bu tarayıcı bildirim desteklemiyor' : 'Bildirim izni verilmedi', 'error');
+          }
+        }}
+      />
+      {notifyOn && (
+        <button
+          type="button"
+          className="btn btn--ghost btn--sm"
+          style={{ alignSelf: 'flex-start' }}
+          onClick={async () => {
+            const ok = await sendNotification('Para Defteri', `Deneme bildirimi. Günlük limitiniz ${dailyLimit > 0 ? tl(dailyLimit, { decimals: 0 }) : 'henüz ayarlı değil'}.`, 'deneme');
+            if (!ok) toast('Bildirim gönderilemedi', 'error');
+          }}
+        >
+          Deneme bildirimi gönder
+        </button>
+      )}
+    </section>
   );
 }
 

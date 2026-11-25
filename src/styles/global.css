@@ -763,6 +763,125 @@ button:disabled {
   height: 10px;
 }
 
+/* günlük harcama limiti */
+.limit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px var(--gutter);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: inherit;
+}
+
+.limit:hover {
+  background: var(--surface-2);
+}
+
+.limit__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 0.92rem;
+}
+
+.limit__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.limit__row strong {
+  font-size: 1.05rem;
+}
+
+.limit__track {
+  display: block;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.limit__fill {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--ink-2);
+  transition: width 0.3s ease;
+}
+
+.limit__note {
+  font-size: 0.82rem;
+  color: var(--ink-3);
+}
+
+.limit--near .limit__fill {
+  background: var(--warn);
+}
+
+.limit--near .limit__label svg,
+.limit--near .limit__note {
+  color: var(--warn);
+}
+
+.limit--over {
+  border-color: color-mix(in srgb, var(--neg) 45%, transparent);
+  background: var(--neg-soft);
+}
+
+.limit--over:hover {
+  background: var(--neg-soft);
+}
+
+.limit--over .limit__fill {
+  background: var(--neg);
+}
+
+.limit--over .limit__label,
+.limit--over .limit__note {
+  color: var(--neg);
+  font-weight: 650;
+}
+
+.limit-alert {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 4px 0 6px;
+}
+
+.limit-alert__icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--neg-soft);
+  color: var(--neg);
+}
+
+.limit-alert__fig {
+  font-size: 1.9rem;
+  font-weight: 700;
+  font-stretch: 115%;
+  color: var(--neg);
+  white-space: normal;
+}
+
+.limit-alert__fig .muted {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
 .funding {
   margin-top: 18px;
   padding-top: 16px;

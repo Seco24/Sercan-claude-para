@@ -70,6 +70,36 @@ export function dailyAverage(total: number, month: MonthKey, todayMonth: MonthKe
   return days > 0 ? total / days : 0;
 }
 
+/** Bir günün günlük limite sayılan harcama toplamı (hariç tutulan kategoriler sayılmaz) */
+export function dailyCountedTotal(expenses: Expense[], date: string, excluded: string[] = []): number {
+  return expenses.reduce((t, e) => (e.date === date && !excluded.includes(e.categoryId) ? t + e.amount : t), 0);
+}
+
+export interface LimitBreach {
+  date: string;
+  spent: number;
+  limit: number;
+  over: number;
+}
+
+/**
+ * Bir harcama kaydedildiğinde günlük limit aşıldı mı? Yalnızca o günün sayılan toplamı
+ * ARTTIYSA ve limitin üstüne çıktıysa uyarı döner (tutarı düşürmek uyarı üretmez).
+ */
+export function checkDailyLimit(
+  before: Expense[],
+  after: Expense[],
+  date: string,
+  limit: number,
+  excluded: string[] = [],
+): LimitBreach | null {
+  if (!(limit > 0)) return null;
+  const prev = dailyCountedTotal(before, date, excluded);
+  const spent = dailyCountedTotal(after, date, excluded);
+  if (spent > limit + 0.004 && spent > prev + 0.004) return { date, spent, limit, over: spent - limit };
+  return null;
+}
+
 /** Aynı güne ait harcamaları gruplar (liste görünümü için) */
 export function groupByDay(expenses: Expense[]): Array<{ date: string; items: Expense[]; total: number }> {
   const groups: Array<{ date: string; items: Expense[]; total: number }> = [];

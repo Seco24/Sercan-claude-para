@@ -47,6 +47,9 @@ function normalizeSettings(raw: unknown): Settings {
     ppfDefaultRate: num(s.ppfDefaultRate, DEFAULT_SETTINGS.ppfDefaultRate),
     ppfDefaultMode: s.ppfDefaultMode === 'compound' ? 'compound' : 'simple',
     ppfDaysPerMonth: num(s.ppfDaysPerMonth, DEFAULT_SETTINGS.ppfDaysPerMonth) > 0 ? num(s.ppfDaysPerMonth, 30) : 30,
+    dailyLimit: Math.max(0, num(s.dailyLimit, 0)),
+    limitNotify: bool(s.limitNotify, false),
+    limitExcluded: arr(s.limitExcluded).filter((x): x is string => typeof x === 'string'),
   };
 }
 

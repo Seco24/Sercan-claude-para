@@ -118,6 +118,12 @@ export interface Settings {
   ppfDefaultMode: AccrualMode;
   /** Aylık oranın günlüğe bölünmesinde kullanılan gün sayısı (30 veya 365/12) */
   ppfDaysPerMonth: number;
+  /** Günlük harcama limiti (TL). 0 = uyarı kapalı */
+  dailyLimit: number;
+  /** Limit aşılınca telefona bildirim de gönderilsin mi */
+  limitNotify: boolean;
+  /** Günlük limite sayılmayan kategoriler (ör. kira, fatura) */
+  limitExcluded: string[];
 }
 
 export interface FxState {

@@ -9,6 +9,7 @@ import { formatRate, tl, usd } from '../../domain/money';
 import type { CapitalMovement, Expense } from '../../domain/types';
 import { href } from '../../hooks/useHashRoute';
 import { useStore } from '../../state/store';
+import { DailyLimitMeter } from '../limit/DailyLimit';
 import { InitialCapitalForm, MovementForm } from './CapitalForms';
 
 type CapitalModal = { kind: 'initial' } | { kind: 'movement'; movement?: CapitalMovement; type?: 'deposit' | 'withdraw' } | null;
@@ -113,6 +114,8 @@ export function Dashboard({ onAddExpense, onEditExpense }: { onAddExpense: () =>
           </p>
         </div>
       </section>
+
+      <DailyLimitMeter />
 
       <section className="stats" aria-label="Özet rakamlar">
         <a className="stat" href={href('harcamalar')}>
